@@ -3,11 +3,6 @@ const LocalizacaoSchema = new mongoose.Schema({
     nome:{
         type: String,
         required: true,
-    },
-    usuario:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'usuario',
-        required: true
     }
 })
 

@@ -3,6 +3,8 @@ const { validationResult } = require('express-validator');
 const Estabelecimento = require('../models/Estabelecimento');
 const Localizacao = require('../models/Localizacao');
 const capitalizeFirstLetter = require('../util/functions/capitalizeFirstLetter');
+const Empresa = require('../models/Empresa');
+const { removerLocalizacaoDeEmpresa, adicionarLocalizacaoDeEmpresa } = require('../helper/Empresa');
 
 module.exports = {
     async create(req, res) {
@@ -11,24 +13,28 @@ module.exports = {
             if (!errors.isEmpty()) {
                 return res.status(400).json({ errors: errors.array() })
             }
-            let { nome, localizacao } = req.body
-            const user = req.user.id
+            const empresaId = req.params.empresaId
+            let { nome, localizacao, endereco } = req.body
             const localizacaoBefore = await Localizacao.
-                findOne({$and: [
-                    { usuario: user },
-                    { nome: { $regex: new RegExp('^' + localizacao + '$', "i") } }
-                ]})
+                findOne({
+                     nome: { $regex: new RegExp('^' + localizacao + '$', "i") }
+                })
             let localizacaoInserted
             if (!localizacaoBefore) {
                 localizacaoInserted = new Localizacao(
-                    { nome: capitalizeFirstLetter(localizacao), usuario: user })
+                    { nome: capitalizeFirstLetter(localizacao)})
                 await localizacaoInserted.save()
             }
 
+            const empresa = await Empresa.findByIdAndUpdate(empresaId, 
+                { $addToSet: { localizacao: localizacaoBefore ?
+                    localizacaoBefore._id : localizacaoInserted._id} }, {new: true} )
+            localizacao = localizacaoBefore ?  localizacaoBefore : localizacaoInserted
+            adicionarLocalizacaoDeEmpresa(empresaId, localizacao)
             const estabelecimento = new Estabelecimento(
                 {
-                    nome, usuario: user, localizacao: localizacaoBefore ?
-                        localizacaoBefore._id : localizacaoInserted._id
+                    nome, empresa: empresaId, localizacao: localizacaoBefore ?
+                        localizacaoBefore._id : localizacaoInserted._id, endereco
                 })
 
             if (estabelecimento._id) {
@@ -51,33 +57,33 @@ module.exports = {
                 return res.status(400).json({ errors: errors.array() })
             }
 
-            const id = req.params.estabelecimentoId
-            const userId = req.user.id
-            let { nome, localizacaoId, nomeLocalizacao } = req.body
+            const {estabelecimentoId, empresaId} = req.params
+
+            let { nome, localizacaoId, nomeLocalizacao, endereco } = req.body
 
             let localizacao
             let estabelecimento
             if (localizacaoId && nomeLocalizacao) {
                 const nomeLocalizacaoAlreadyExists = await Localizacao.
-                    findOne({$and: [
-                        { usuario: userId },
-                        { nome: { $regex: new RegExp('^' + nomeLocalizacao + '$', "i") } }
-                    ]})
+                findOne({
+                     nome: { $regex: new RegExp('^' + localizacao + '$', "i") }
+                })
                 if (!nomeLocalizacaoAlreadyExists) {
                     const localizacaoBefore = await Localizacao.
-                    findOne({$and: [
-                        { usuario: userId },
-                        { nome: { $regex: new RegExp('^' + nomeLocalizacao + '$', "i") } }
-                    ]})
+                    findOne({
+                         nome: { $regex: new RegExp('^' + localizacao + '$', "i") }
+                    })
                     if(!localizacaoBefore){
                         localizacao = await new Localizacao
-                        ({usuario: userId, nome: nomeLocalizacao})
+                        ({ nome: nomeLocalizacao})
                         await localizacao.save()
                         if(localizacao._id){
                             let localizacaoIdAntiga = localizacaoId
                             localizacaoId = localizacao._id
                             let estabelecimentos = await Estabelecimento.find(
                                 { localizacao: localizacaoIdAntiga })
+                            removerLocalizacaoDeEmpresa(empresaId, localizacaoIdAntiga)
+                            adicionarLocalizacaoDeEmpresa(empresaId, localizacaoId)
                             if(estabelecimentos.length <= 1){
                                 await Localizacao.findByIdAndDelete(localizacaoIdAntiga)
                             }
@@ -85,10 +91,10 @@ module.exports = {
                     }
                 }
             }
-            const update = { nome, localizacaoId }
+            const update = { nome, localizacaoId, endereco }
             if (nome) {
                 estabelecimento = await Estabelecimento.findByIdAndUpdate
-                    (id, update, { new: true })
+                    (estabelecimentoId, update, { new: true })
                 estabelecimento.localizacao = localizacaoId
                 await estabelecimento.save().then(t => t.populate
                     ({ path: 'localizacao', select: 'nome' }).execPopulate())
@@ -97,7 +103,7 @@ module.exports = {
                 return res.status(200).send(estabelecimento)
             } else if (localizacao) {
                 if(!estabelecimento){
-                    estabelecimento = await Estabelecimento.findById(id)
+                    estabelecimento = await Estabelecimento.findById(estabelecimentoId)
                     .populate({ path: 'localizacao', select: 'nome' })
                 }
                 if (estabelecimento) {
@@ -114,23 +120,20 @@ module.exports = {
             return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
         }
     },
-    async getByLocalizacaoAndLoggedUser(req, res) {
+    async getByLocalizacaoAndEmpresa(req, res) {
         try {
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
                 return res.status(400).json({ errors: errors.array() })
             }
-            console.log(req.params)
-            let { localizacaoId } = req.params
-            const userId = req.user.id
+            let { localizacaoId, empresaId } = req.params
 
             let estabelecimentos = await Estabelecimento.find({
                 $and: [
-                    { usuario: userId },
+                    { empresa: empresaId },
                     { localizacao: localizacaoId }
                 ]
             }).populate({ path: 'localizacao', select: 'nome' })
-            console.log(estabelecimentos)
 
             if (estabelecimentos.length > 0) {
                 return res.status(200).send(estabelecimentos)
@@ -145,15 +148,15 @@ module.exports = {
             return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
         }
     },
-    async getByLoggedUser(req, res) {
+    async getByEmpresa(req, res) {
         try {
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
                 return res.status(400).json({ errors: errors.array() })
             }
-            const userId = req.user.id
+            const {empresaId} = req.params
 
-            let estabelecimentos = await Estabelecimento.find({ usuario: userId })
+            let estabelecimentos = await Estabelecimento.find({ empresa: empresaId })
             .populate({ path: 'localizacao', select: 'nome' })
 
             if (estabelecimentos.length > 0) {
@@ -169,18 +172,15 @@ module.exports = {
             return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
         }
     },
-    async getOneByLoggedUser(req, res){
+    async getOne(req, res){
         try {
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
                 return res.status(400).json({ errors: errors.array() })
             }
-            const userId = req.user.id
             const estabelecimentoId = req.params.estabelecimentoId
-            let estabelecimento = await Estabelecimento.findOne({$and: [
-                { usuario: userId },
-                { _id: estabelecimentoId }
-            ]}).populate({ path: 'localizacao', select: 'nome' })
+            let estabelecimento = await Estabelecimento.findOne({ _id: estabelecimentoId })
+            .populate({ path: 'localizacao', select: 'nome' })
             
             if (estabelecimento) {
                 return res.status(200).send(estabelecimento)
@@ -207,8 +207,9 @@ module.exports = {
             if(estabelecimentoDeletado){
                 estabelecimentos = await Estabelecimento.find(
                     { localizacao: estabelecimentoDeletado.localizacao })
+                removerLocalizacaoDeEmpresa(estabelecimentoDeletado.empresa,
+                     estabelecimentoDeletado.localizacao)
             }
-            
             if(estabelecimentos.length === 0){
                 await Localizacao.findByIdAndDelete(estabelecimentoDeletado.localizacao)
             }
@@ -224,16 +225,55 @@ module.exports = {
             return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
         }
     },
-    async getLocalizacoesByUser(req, res){
+    async getLocalizacoesByEmpresa(req, res){
         try {
-            const user = req.user.id
-            let localizacoes = await Localizacao.find({usuario : user})
-            if(localizacoes){
-                return res.status(200).json({localizacoes})
+            const {empresaId} = req.params
+            let empresa = await Empresa.find({_id : empresaId})
+            if(empresa.localizacoes.length > 0){
+                return res.status(200).json({localizacoes: empresa.localizacoes})
             }else{
                 return res.status(404).send({msg: MESSAGES['404_LOCALIZACOES']})
             }
             
+        } catch (error) {
+            console.error(error.message)
+            return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
+        }
+    },
+    async getByLocalizacao(req, res) {
+        try {
+            const errors = validationResult(req)
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() })
+            }
+            let { localizacaoId } = req.params
+
+            let estabelecimentos = await Estabelecimento.find(
+                    { localizacao: localizacaoId }
+                ).populate({ path: 'localizacao', select: 'nome' })
+
+            if (estabelecimentos.length > 0) {
+                return res.status(200).send(estabelecimentos)
+            } else {
+                return res.status(404).send({
+                    errors: [
+                        { msg: MESSAGES.ESTABELECIMENTO_EMPTY_LIST }]
+                })
+            }
+        } catch (error) {
+            console.error(error.message)
+            return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
+        }
+    },
+
+    async getAll(req, res){
+        try {
+            const estabelecimentos = await Estabelecimento.find({})
+            if(estabelecimentos.length > 0){
+                return res.status(200).send(estabelecimentos)
+            }else{
+                return res.status(404).send({ errors: [{ msg: MESSAGES.ESTABELECIMENTO_EMPTY_LIST }] })
+            }
         } catch (error) {
             console.error(error.message)
             return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })

@@ -16,5 +16,6 @@ const UsuarioSchema = new mongoose.Schema({
         select: false
     }
 })
+
 const Usuario = mongoose.model('usuario',UsuarioSchema)
 module.exports = {Usuario}

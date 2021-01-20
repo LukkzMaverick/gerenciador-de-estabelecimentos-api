@@ -4,9 +4,13 @@ const EstabelecimentoSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    usuario:{
+    empresa:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'usuario',
+        ref: 'empresa',
+        required: true
+    },
+    endereco:{
+        type: String,
         required: true
     },
     localizacao:{
