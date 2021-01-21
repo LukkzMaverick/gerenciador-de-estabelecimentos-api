@@ -2,13 +2,14 @@ const Empresa = require('../models/Empresa')
 
 async function removerLocalizacaoDeEmpresa(empresaId, localizacaoId){
     const empresa = await Empresa.findByIdAndUpdate(empresaId, 
-        { $pull: { localizacao: localizacaoId} }, {new: true} )
+        { $pull: { localizacoes: localizacaoId} }, {new: true} )
     return empresa
 }
 
 async function adicionarLocalizacaoDeEmpresa(empresaId, localizacaoId){
     const empresa = await Empresa.findByIdAndUpdate(empresaId, 
-        { $addToSet: { localizacao: localizacaoId} }, {new: true} )
+        { $addToSet: { localizacoes: localizacaoId} }, {new: true} )
+    console.log(empresa)
     return empresa
 }
 

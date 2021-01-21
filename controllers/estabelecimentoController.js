@@ -30,7 +30,7 @@ module.exports = {
                 { $addToSet: { localizacao: localizacaoBefore ?
                     localizacaoBefore._id : localizacaoInserted._id} }, {new: true} )
             localizacao = localizacaoBefore ?  localizacaoBefore : localizacaoInserted
-            adicionarLocalizacaoDeEmpresa(empresaId, localizacao)
+            adicionarLocalizacaoDeEmpresa(empresaId, localizacao._id)
             const estabelecimento = new Estabelecimento(
                 {
                     nome, empresa: empresaId, localizacao: localizacaoBefore ?
@@ -172,29 +172,30 @@ module.exports = {
             return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
         }
     },
-    async getOne(req, res){
-        try {
-            const errors = validationResult(req)
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() })
-            }
-            const estabelecimentoId = req.params.estabelecimentoId
-            let estabelecimento = await Estabelecimento.findOne({ _id: estabelecimentoId })
-            .populate({ path: 'localizacao', select: 'nome' })
+    // async getOne(req, res){
+    //     try {
+    //         const errors = validationResult(req)
+    //         if (!errors.isEmpty()) {
+    //             return res.status(400).json({ errors: errors.array() })
+    //         }
+    //         console.log('sem nexo')
+    //         const estabelecimentoId = req.params.estabelecimentoId
+    //         let estabelecimento = await Estabelecimento.findOne({ _id: estabelecimentoId })
+    //         .populate({ path: 'localizacao', select: 'nome' })
             
-            if (estabelecimento) {
-                return res.status(200).send(estabelecimento)
-            } else {
-                return res.status(404).send({
-                    errors: [
-                        { msg: MESSAGES['404_ESTABELECIMENTO'] }]
-                })
-            }
-        } catch (error) {
-            console.error(error.message)
-            return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
-        }
-    },
+    //         if (estabelecimento) {
+    //             return res.status(200).send(estabelecimento)
+    //         } else {
+    //             return res.status(404).send({
+    //                 errors: [
+    //                     { msg: MESSAGES['404_ESTABELECIMENTO'] }]
+    //             })
+    //         }
+    //     } catch (error) {
+    //         console.error(error.message)
+    //         return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
+    //     }
+    // },
     async delete(req, res) {
         try {
             const errors = validationResult(req)
@@ -225,29 +226,17 @@ module.exports = {
             return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
         }
     },
-    async getLocalizacoesByEmpresa(req, res){
-        try {
-            const {empresaId} = req.params
-            let empresa = await Empresa.find({_id : empresaId})
-            if(empresa.localizacoes.length > 0){
-                return res.status(200).json({localizacoes: empresa.localizacoes})
-            }else{
-                return res.status(404).send({msg: MESSAGES['404_LOCALIZACOES']})
-            }
-            
-        } catch (error) {
-            console.error(error.message)
-            return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
-        }
-    },
+    
     async getByLocalizacao(req, res) {
         try {
+
+            console.log('meu tio')
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
                 return res.status(400).json({ errors: errors.array() })
             }
             let { localizacaoId } = req.params
-
+            console.log(localizacaoId)
             let estabelecimentos = await Estabelecimento.find(
                     { localizacao: localizacaoId }
                 ).populate({ path: 'localizacao', select: 'nome' })

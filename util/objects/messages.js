@@ -10,10 +10,11 @@ const MESSAGES = {
     'NAME_REQUIRED': 'Nome é um campo obrigatório',
     'NAME_MUST_BE_A_STRING': 'O campo nome precisa ser do tipo String',
     '404_ESTABELECIMENTO': 'Id Inválido, estabelecimento não encontrado!',
-    '404_LOCALIZACOES': 'Não foram encontradas localizações para este usuário',
+    '404_LOCALIZACOES': 'Nenhuma localização cadastrada.',
     '404_EMPRESAS': 'Nenhuma empresa cadastrada.',
     '404_EMPRESA': 'Id Inválido, empresa não encontrada.',
-    'ESTABELECIMENTO_EMPTY_LIST': 'Lista de estabelecimentos vazia'
+    'ESTABELECIMENTO_EMPTY_LIST': 'Lista de estabelecimentos vazia',
+    'FORBIDDEN': "Usuário não tem permissão para executar esta ação."
 }
 
 module.exports = MESSAGES

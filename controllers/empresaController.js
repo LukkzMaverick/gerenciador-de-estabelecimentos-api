@@ -1,7 +1,6 @@
 const MESSAGES = require('../util/objects/messages');
 const { validationResult } = require('express-validator');
 const Estabelecimento = require('../models/Estabelecimento');
-const Localizacao = require('../models/Localizacao');
 const Empresa = require('../models/Empresa');
 
 module.exports = {
@@ -9,7 +8,9 @@ module.exports = {
     async create(req, res){
         try {
             const {nome, tipo} = req.body
-            const empresa = new Empresa({nome, tipo})
+            const usuario = req.user.id
+            console.log(usuario)
+            const empresa = new Empresa({nome,usuario, tipo})
             if(empresa._id){
                 await empresa.save()
                 return res.status(201).send(empresa)
@@ -37,7 +38,7 @@ module.exports = {
     async update(req, res){
         try {
             const {empresaId} = req.params
-            const empresa = await Empresa.findByIdAndUpdate(empresaId, req.body, {new: true})
+            const empresa = await Empresa.findByIdAndUpdate(empresaId, {$set: req.body}, {new: true})
             if(empresa){
                 return res.status(200).send(empresa)
             }else{
@@ -52,6 +53,7 @@ module.exports = {
             const {empresaId} = req.params
             const empresa = await Empresa.findByIdAndDelete(empresaId)
             if(empresa){
+                Estabelecimento.deleteMany({empresa: empresaId})
                 return res.status(200).send(empresa)
             }else{
                 return res.status(404).send({ errors: [{ msg: MESSAGES['404_EMPRESA'] }] })

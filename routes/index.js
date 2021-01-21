@@ -9,4 +9,6 @@ module.exports = app => {
     app.use(bodyParser.json());  
     app.use('/auth',require('./usuarioRoutes'))
     app.use('/estabelecimento',require('./estabelecimentoRoutes'))
+    app.use('/empresa',require('./empresaRoutes'))
+    app.use('/localizacao',require('./localizacaoRoutes'))
 }

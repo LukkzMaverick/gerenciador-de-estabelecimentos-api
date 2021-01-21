@@ -14,6 +14,10 @@ const UsuarioSchema = new mongoose.Schema({
         type: String,
         required: true,
         select: false
+    },
+    role:{
+        type: String,
+        default: 'user'
     }
 })
 
