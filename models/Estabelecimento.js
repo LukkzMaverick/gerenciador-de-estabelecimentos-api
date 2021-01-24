@@ -17,7 +17,12 @@ const EstabelecimentoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'localizacao',
         required: true
-    }
+    },
+    usuario:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'usuario',
+        required: true
+    },
 })
 
 module.exports = mongoose.model('estabelecimento', EstabelecimentoSchema)

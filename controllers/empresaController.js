@@ -7,9 +7,12 @@ module.exports = {
 
     async create(req, res){
         try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() })
+            }
             const {nome, tipo} = req.body
             const usuario = req.user.id
-            console.log(usuario)
             const empresa = new Empresa({nome,usuario, tipo})
             if(empresa._id){
                 await empresa.save()
@@ -33,6 +36,19 @@ module.exports = {
         } catch (error) {
             console.error(error.message)
             return res.status(500).send({ errors: [{ msg: MESSAGES.INTERNAL_SERVER_ERROR }] })
+        }
+    },
+    async byLoggedUser(req,res){
+        try {
+            const usuario = req.user.id
+            const empresas = await Empresa.find({usuario})
+            if(empresas){
+                return res.status(200).send(empresas)
+            }else{
+                return res.status(404).send({ errors: [{ msg: MESSAGES['404_EMPRESAS'] }] })
+            }
+        } catch (error) {
+            
         }
     },
     async update(req, res){

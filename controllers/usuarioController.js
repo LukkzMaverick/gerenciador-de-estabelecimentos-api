@@ -16,7 +16,7 @@ module.exports = {
     
             let {email, senha, nome} = req.body
             if(await Usuario.findOne({email: email})){
-                return res.status(403).send({errors: [{msg: MESSAGES.EMAIL_ALREADY_REGISTERED}]})
+                return res.status(409).send({errors: [{msg: MESSAGES.EMAIL_ALREADY_REGISTERED}]})
             }
             senha = await criptografarSenha(senha)
             const usuario = new Usuario({email, senha, nome})
@@ -61,7 +61,7 @@ module.exports = {
                 res.status(403).send({ errors: [{ msg: MESSAGES.FORBIDDEN }] })
             }
             if (await Usuario.findOne({ email: email })) {
-                return res.status(403).send({ errors: [{ msg: MESSAGES.EMAIL_ALREADY_REGISTERED }] })
+                return res.status(409).send({ errors: [{ msg: MESSAGES.EMAIL_ALREADY_REGISTERED }] })
             }
             let senhaCriptografada = await criptografarSenha(senha)
             const usuario = new Usuario({ email, senha: senhaCriptografada, nome, role })
