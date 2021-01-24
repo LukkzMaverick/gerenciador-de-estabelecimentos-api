@@ -3,7 +3,6 @@ const { validationResult } = require('express-validator');
 const Estabelecimento = require('../models/Estabelecimento');
 const Localizacao = require('../models/Localizacao');
 const capitalizeFirstLetter = require('../util/functions/capitalizeFirstLetter');
-const Empresa = require('../models/Empresa');
 const { removerLocalizacaoDeEmpresa, adicionarLocalizacaoDeEmpresa } = require('../helper/Empresa');
 
 module.exports = {
@@ -131,6 +130,7 @@ module.exports = {
                     { localizacao: localizacaoId }
                 ]
             }).populate({ path: 'localizacao', select: 'nome' })
+            .populate({path: 'empresa', select: 'nome'})
 
             if (estabelecimentos.length > 0) {
                 return res.status(200).send(estabelecimentos)
@@ -259,6 +259,7 @@ module.exports = {
             let estabelecimentos = await Estabelecimento.find(
                     { localizacao: localizacaoId }
                 ).populate({ path: 'localizacao', select: 'nome' })
+                .populate({path: 'empresa', select: 'nome'})
 
             if (estabelecimentos.length > 0) {
                 return res.status(200).send(estabelecimentos)
