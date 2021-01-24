@@ -8,6 +8,7 @@ const MESSAGES = {
     'VALID_EMAIL' : 'Por favor, insira um email válido.',
     'WITHOUT_TOKEN' : 'Token não enviado',
     'NAME_REQUIRED': 'Nome é um campo obrigatório',
+    'NAME_LOCALIZATION_REQUIRED': 'Cidade é um campo obrigatório',
     'TIPO_REQUIRED': 'Tipo é um campo obrigatório',
     'NAME_MUST_BE_A_STRING': 'O campo nome precisa ser do tipo String',
     '404_ESTABELECIMENTO': 'Id Inválido, estabelecimento não encontrado!',

@@ -8,6 +8,13 @@ const validatorCadastrarEstabelecimento = [
     check('empresaId',MESSAGES.ID_EMPRESA_REQUIRED).notEmpty()
 ]
 
+const validatorAtualizarEstabelecimento = [
+    check('nome',MESSAGES.NAME_REQUIRED).notEmpty(),
+    check('endereco',MESSAGES.ENDERECO_REQUIRED).notEmpty(),
+    check('nomeLocalizacao',MESSAGES.NAME_LOCALIZATION_REQUIRED).notEmpty(),
+]
+
 module.exports = {
-    validatorCadastrarEstabelecimento
+    validatorCadastrarEstabelecimento,
+    validatorAtualizarEstabelecimento
 }

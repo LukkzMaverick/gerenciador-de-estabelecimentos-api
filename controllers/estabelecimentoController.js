@@ -13,8 +13,7 @@ module.exports = {
             if (!errors.isEmpty()) {
                 return res.status(400).json({ errors: errors.array() })
             }
-            const empresaId = req.params.empresaId
-            let { nome, localizacao, endereco } = req.body
+            let { nome, localizacao, endereco, empresaId } = req.body
             const localizacaoBefore = await Localizacao.
                 findOne({
                      nome: { $regex: new RegExp('^' + localizacao + '$', "i") }
@@ -62,12 +61,12 @@ module.exports = {
             if (localizacaoId && nomeLocalizacao) {
                 const nomeLocalizacaoAlreadyExists = await Localizacao.
                 findOne({
-                     nome: { $regex: new RegExp('^' + localizacao + '$', "i") }
+                     nome: { $regex: new RegExp('^' + nomeLocalizacao + '$', "i") }
                 })
                 if (!nomeLocalizacaoAlreadyExists) {
                     const localizacaoBefore = await Localizacao.
                     findOne({
-                         nome: { $regex: new RegExp('^' + localizacao + '$', "i") }
+                         nome: { $regex: new RegExp('^' + nomeLocalizacao + '$', "i") }
                     })
                     if(!localizacaoBefore){
                         localizacao = await new Localizacao
@@ -84,6 +83,17 @@ module.exports = {
                                 await Localizacao.findByIdAndDelete(localizacaoIdAntiga)
                             }
                         }
+                    }
+                }else{
+                    let localizacao = await Localizacao.findOne({nome: nomeLocalizacao})
+                    localizacaoId = localizacao._id
+                    let est = await Estabelecimento.findOneAndUpdate({_id: estabelecimentoId}, {$set: {localizacao: localizacao._id}})
+                    removerLocalizacaoDeEmpresa(empresaId, est.localizacao._id)
+                    adicionarLocalizacaoDeEmpresa(empresaId, localizacao._id)
+                    let estabelecimentos = await Estabelecimento.find(
+                        { localizacao: est.localizacao._id })
+                    if(estabelecimentos.length <= 1){
+                        await Localizacao.findByIdAndDelete(est.localizacao._id)
                     }
                 }
             }
